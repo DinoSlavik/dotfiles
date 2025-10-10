@@ -1,0 +1,17 @@
+alias la='ls -a'
+alias ll='ls -l'
+alias lla='ls -la'
+
+alias cls='clear && ls'
+alias cla='clear && ls -a'
+alias cll='clear && ls -l'
+alias clla='clear && ls -la'
+
+alias fucking='sudo'
+alias please='sudo'
+
+alias :wq='exit'
+alias shitdown='sudo shutdown -P now'
+
+# Clear and fastfetch
+alias clearfetch='clear && fastfetch'
