@@ -140,8 +140,8 @@ function general_install() {
     Print "\n====]> Coping MangoHud config\n"
     copy_file "$(pwd)/general/.config/MangoHud/MangoHud.conf" "$HOMEDIR/.config/MangoHud/MangoHud.conf"
 
-    # Links
 
+    # Links
 
     # Vim
     Print "\n==]> Configuring Vim\n"
@@ -155,6 +155,7 @@ function general_install() {
     # zsh
     copy_file "$(pwd)/general/.zshrc" "$HOMEDIR/.zshrc"
     copy_file "$(pwd)/general/.zsh_aliases" "$HOMEDIR/.zsh_aliases"
+
     # bash
     copy_file "$(pwd)/general/.bashrc" "$HOMEDIR/.bashrc"
     soft_link "$(pwd)/general/.zsh_aliases" "$HOMEDIR/.bash_aliases"
