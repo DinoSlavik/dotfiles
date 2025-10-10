@@ -1,0 +1,6 @@
+general/vim/autoload/*
+general/vim/backup/*
+general/vim/colors/*
+general/vim/plugged/*
+general/vim/.*
+
