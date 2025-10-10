@@ -21,9 +21,14 @@ Options:
   --without-general (NI)                    install only config-specific dotfiles
                                             (requires \`-c\` to be set)
                                             (WARNING: some programs in dotfiles may not work properly)
-  --do-not-rewrite-existings                prevent files that already exist in your system to be rewriten
+  --do-not-overwrite-existings              prevent files that already exist in your system to be overwriten
   --install-requirements (NI)               install requirements before installing configuration
                                             (Note that you also can install them using `install_requirements.sh`)
+
+
+  --suicide-mode (NI)                       disable ALL text output (e.g. prints, logs, name as you wish), error checkings and forcefully overwrites existings during installation
+                                            (DO NOT RECOMENDED TO ENABLE, EVEN IF YOU THINK THAT THERE WILL BE NO ERRORS)
+                                            (DO NOT RECOMENDED TO ENABLE AT ALL)
 
 *Note that (NI) options not yet implemented and will be added soon
 
@@ -39,6 +44,14 @@ function Print() {
     #    return 0
     #fi
 
+    #
+    #  Code supporting suicide mode, but it also needs to remove all errors checks, 
+    #  so I think I'll create another .sh file with special functions for it, but it will be later, 
+    #  when I move normal functions, I think.
+    #
+    #if [ ! $ISSUICIDEMODE ]; then
+    #    1>&2 printf "$@"
+    #fi
     1>&2 printf "$@"
 }
 
@@ -56,12 +69,14 @@ function create_directory() {
 
 function copy_file() {
     if [[ ! -e "$1" || -d "$1" ]]; then
-        Print "==]> ERROR: Can't copy non existing file or directory (check \`copy_dir\`)\n     Note that it repo's fault, so try to reclone it or install previous version from github releases (if there is any). If it isn't worked please create issue on github or contact me (Dino Slavik).\n"
+        Print "==]> ERROR: Can't copy non existing file or directory (check \`copy_directory()\`)\n"
+        Print "     Note that it repo's fault, so try to reclone it or install previous version from github releases (if there is any).\n"
+        Print "     If it isn't worked please create issue on github or contact me (Dino Slavik).\n"
         Print "     Tried to copy \`$1\`\n"
         exit
     fi
     if [ -e "$2" ]; then
-        Print "=> Copying \`$1\` to \`$2\`\n"
+        Print "=> Coping \`$1\` to \`$2\`\n"
         if [ $ISREWRITINGEXISTINGS ]; then
             Print "==> \`$2\` target file already exists, overwriting\n"
             cp $1 $2
@@ -72,14 +87,42 @@ function copy_file() {
         Print "==]> ERROR: target \`$HOMEDIR/$2\` is a directory, aborting\n"
         exit
     else
-        Print "=> Copying \`$1\` to \`$2\`\n"
+        Print "=> Coping \`$1\` to \`$2\`\n"
         cp $1 $2
+    fi
+}
+
+# TODO: rewrite error checking for valid directory use
+function copy_directory() {
+    if [[ ! -d "$1" ]]; then
+        Print "==]> ERROR: Can't copy non existing directory or file (check \`copy_file()\`)\n"
+        Print "     Note that it repo's fault, so try to reclone it or install previous version from github releases (if there is any).\n"
+        Print "     If it isn't worked please create issue on github or contact me (Dino Slavik).\n"
+        Print "     Tried to copy \`$1\`\n"
+        exit
+    fi
+    if [ -d "$2" ]; then
+        Print "=> Coping \`$1\` to \`$2\`\n"
+        if [ $ISREWRITINGEXISTINGS ]; then
+            Print "==> \`$2\` target directory already exists, overwriting\n"
+            cp -r $1 $2
+        else
+            Print "==> \`$2\` target directory already exists, skipping\n"
+        fi
+    elif [ -e "$2" ]; then
+        Print "==]> ERROR: target \`$HOMEDIR/$2\` is a file, aborting\n"
+        exit
+    else
+        Print "=> Coping \`$1\` to \`$2\`\n"
+        cp -r $1 $2
     fi
 }
 
 function soft_link() {
     if [[ ! -e "$1" && ! -d "$1" && ! -L "$1" ]]; then
-        Print "==]> ERROR: Can't link non existing file or non existing directory\n     NOTE that it repo's or my fault, so try to reclone it or install previous version from github releases (if there is any). \n     If it isn't worked please create issue on github (DinoSlavik/dotfiles) or contact me (Dino Slavik).\n"
+        Print "==]> ERROR: Can't link non existing file or non existing directory\n"
+        Print "     NOTE that it repo's or my fault, so try to reclone it or install previous version from github releases (if there is any).\n"
+        Print "     If it isn't worked please create issue on github (DinoSlavik/dotfiles) or contact me (Dino Slavik).\n"
         Print "     Tried to link \`$1\`\n"
         Print "     To \`$2\`\n"
         exit
@@ -107,6 +150,7 @@ function general_install() {
     create_directory "$HOMEDIR/Downloads"
     create_directory "$HOMEDIR/Music"
     create_directory "$HOMEDIR/Pictures"
+    create_directory "$HOMEDIR/Pictures/Screenshots"
     create_directory "$HOMEDIR/Public"
     create_directory "$HOMEDIR/Temp"
     create_directory "$HOMEDIR/Videos"
@@ -115,6 +159,7 @@ function general_install() {
     create_directory "$HOMEDIR/.config/kitty"
     create_directory "$HOMEDIR/.config/kitty/custom-themes"
     create_directory "$HOMEDIR/.config/MangoHud"
+    create_directory "$HOMEDIR/.config/ranger"
     create_directory "$HOMEDIR/.links"
     create_directory "$HOMEDIR/.vim"
     create_directory "$HOMEDIR/.vim/autoload"
@@ -140,8 +185,18 @@ function general_install() {
     Print "\n====]> Coping MangoHud config\n"
     copy_file "$(pwd)/general/.config/MangoHud/MangoHud.conf" "$HOMEDIR/.config/MangoHud/MangoHud.conf"
 
+    ## Ranger
+    Print "\n====]> Coping Ranger config\n"
+    copy_file "$(pwd)/general/.config/ranger/rc.conf" "$HOMEDIR/.config/ranger/rc.conf"
+    copy_file "$(pwd)/general/.config/ranger/rifle.conf" "$HOMEDIR/.config/ranger/rifle.conf"
+    copy_file "$(pwd)/general/.config/ranger/scope.sh" "$HOMEDIR/.config/ranger/scope.sh"
+
 
     # Links
+
+    # OhMyZsh
+    Print "\n==]> Configuring OhMyZsh\n"
+    copy_directory "$(pwd)/general/.oh-my-zsh" "$HOMEDIR/"
 
     # Vim
     Print "\n==]> Configuring Vim\n"
@@ -171,7 +226,7 @@ function hyprland_install() {
 }
 
 function args() {
-    local options=$(getopt -o hc:p: --long help,config:,home-dir:,do-not-rewrite-existings -- "$@")
+    local options=$(getopt -o hc:p: --long help,config:,home-dir:,do-not-overwrite-existings -- "$@")
     eval set -- "$options"
 
     while true; do 
@@ -190,7 +245,7 @@ function args() {
                 # But `realpath` raises error saying "..." is directiory
                 HOMEDIR="$(cd -P -- $1 && pwd)"
                 ;;
-            --do-not-rewrite-existings)
+            --do-not-overwrite-existings)
                 ISREWRITINGEXISTINGS=0
                 shift
                 ;;
@@ -207,6 +262,7 @@ function args() {
 CONFIGURATION="general"
 HOMEDIR="$HOME"
 ISREWRITINGEXISTINGS=1
+ISSUICIDEMODE=0
 
 args $0 "$@"
 
